@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.vault/
+.workspace/
+*.local
+.DS_Store
+npm-debug.log*
