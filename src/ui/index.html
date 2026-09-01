@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Taylor Dynasty — AI Agent Harness</title>
+<style>
+  :root {
+    --bg: #0a0e1a; --panel: #111726; --panel2: #161e30; --line: #232d44;
+    --text: #e8ecf5; --muted: #8b95ad; --gold: #d4af37; --gold-dim: #a8862a;
+    --ok: #3fb96f; --err: #e05252; --warn: #d9a13b; --blue: #5b8def;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+  .brand { font-size: 1.45rem; letter-spacing: .12em; font-weight: 700; }
+  .brand span { color: var(--gold); }
+  .tagline { color: var(--muted); margin-top: 6px; font-size: .95rem; letter-spacing: .02em; }
+  .arch { color: var(--muted); font-size: .78rem; margin-top: 10px; letter-spacing: .06em; }
+  .arch b { color: var(--text); }
+  nav { display: flex; gap: 8px; margin: 18px 0; flex-wrap: wrap; }
+  nav button {
+    background: var(--panel); color: var(--muted); border: 1px solid var(--line);
+    padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: .92rem; letter-spacing: .04em;
+  }
+  nav button.active { background: var(--panel2); color: var(--gold); border-color: var(--gold-dim); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  h2 { margin: 0 0 12px; font-size: 1.05rem; letter-spacing: .06em; }
+  h2 small { color: var(--muted); font-weight: 400; margin-left: 10px; letter-spacing: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th { text-align: left; color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: .7rem; letter-spacing: .08em; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px 10px; border-bottom: 1px solid rgba(35,45,68,.55); vertical-align: top; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover td { background: rgba(212,175,55,.05); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: .72rem; letter-spacing: .04em; border: 1px solid var(--line); color: var(--muted); }
+  .badge.arena { color: var(--gold); border-color: var(--gold-dim); }
+  .badge.ok { color: var(--ok); border-color: rgba(63,185,111,.4); }
+  .badge.no { color: var(--muted); opacity: .6; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .dot.up { background: var(--ok); } .dot.down { background: #3a4258; }
+  input[type=text], input[type=textarea], textarea, select {
+    background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; font-size: .92rem; width: 100%; font-family: inherit;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .row > * { flex: 1; min-width: 180px; }
+  .row .grow2 { flex: 2; }
+  label.chk { display: flex; gap: 8px; align-items: center; font-size: .88rem; color: var(--muted); flex: 0 0 auto; min-width: 0; }
+  label.chk input { accent-color: var(--gold); }
+  button.act {
+    background: linear-gradient(180deg, var(--gold), var(--gold-dim)); color: #14100a; border: none;
+    padding: 10px 22px; border-radius: 8px; font-weight: 700; cursor: pointer; letter-spacing: .04em; font-size: .92rem;
+  }
+  button.act:disabled { opacity: .5; cursor: wait; }
+  .winner {
+    background: linear-gradient(90deg, rgba(212,175,55,.14), transparent);
+    border: 1px solid var(--gold-dim); border-radius: 10px; padding: 14px 18px; margin: 14px 0;
+    font-size: 1.02rem;
+  }
+  .winner b { color: var(--gold); }
+  .muted { color: var(--muted); }
+  .small { font-size: .8rem; }
+  pre { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; font-size: .82rem; line-height: 1.5; }
+  .pill { display: inline-block; background: var(--panel2); border: 1px solid var(--line); padding: 3px 10px; border-radius: 20px; font-size: .78rem; margin: 0 4px 4px 0; color: var(--muted); }
+  .pill.on { color: var(--gold); border-color: var(--gold-dim); }
+  .modal-bg { position: fixed; inset: 0; background: rgba(5,8,15,.75); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--gold-dim); border-radius: 14px; padding: 22px; max-width: 560px; width: 92%; }
+  .modal h3 { margin: 0 0 12px; color: var(--gold); letter-spacing: .05em; }
+  .modal pre { white-space: pre; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel2); border: 1px solid var(--line); padding: 10px 16px; border-radius: 8px; font-size: .85rem; display: none; z-index: 60; }
+  .rational { color: var(--muted); font-size: .78rem; margin-top: 3px; }
+  .score { color: var(--gold); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">TAYLOR <span>DYNASTY</span> — AI AGENT HARNESS</div>
+    <div class="tagline">One Harness. Any Model. Infinite Possibilities.</div>
+    <div class="arch">AGENT RUNTIME → <b>MODEL ROUTER</b> → ARENA · API MODELS · LOCAL MODELS</div>
+  </header>
+
+  <nav>
+    <button data-tab="models" class="active">MODELS</button>
+    <button data-tab="router">ROUTER</button>
+    <button data-tab="battle">BATTLE LAB</button>
+    <button data-tab="audit">AUDIT</button>
+  </nav>
+
+  <!-- MODELS -->
+  <section id="tab-models">
+    <div class="panel">
+      <h2>MODEL CATALOG <small>click a row for its Model Intelligence card</small></h2>
+      <div style="overflow-x:auto">
+      <table id="models-table">
+        <thead>
+          <tr>
+            <th>Rank</th><th>Model</th><th>Provider</th><th>Kind</th>
+            <th class="num">Success</th><th class="num">Tools</th><th class="num">Steer</th>
+            <th class="num">Coding</th><th class="num">Reason</th>
+            <th class="num">Speed</th><th class="num">Cost/task</th><th>Ctx</th><th>Avail</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROUTER -->
+  <section id="tab-router" hidden>
+    <div class="panel">
+      <h2>INTELLIGENT MODEL ROUTER</h2>
+      <div class="row">
+        <div class="grow2"><textarea id="route-task" placeholder='e.g. "Build me a production-ready SaaS application with a landing page, API and database."'>Build me a production-ready SaaS application: a landing page with pricing, a REST API, and a SQLite user store.</textarea></div>
+      </div>
+      <div class="row">
+        <div style="flex:0 0 220px">
+          <select id="route-strategy">
+            <option value="auto">Auto</option>
+            <option value="best">Best</option>
+            <option value="fast">Fast</option>
+            <option value="cheap">Cheap</option>
+            <option value="balanced">Balanced</option>
+            <option value="arena-champion">Arena Champion</option>
+          </select>
+        </div>
+        <label class="chk"><input type="checkbox" id="route-all" /> include unavailable (intelligence view)</label>
+        <div style="flex:0 0 auto"><button class="act" id="route-btn">ROUTE</button></div>
+      </div>
+      <div id="route-out"></div>
+    </div>
+  </section>
+
+  <!-- BATTLE -->
+  <section id="tab-battle" hidden>
+    <div class="panel">
+      <h2>BATTLE LAB <small>same task · multiple models · one winner</small></h2>
+      <div class="row">
+        <div class="grow2"><textarea id="battle-task">Create a landing page for my AI company with a pricing section and an API waitlist.</textarea></div>
+      </div>
+      <div class="row" id="battle-models"></div>
+      <div class="row">
+        <div style="flex:0 0 auto"><button class="act" id="battle-btn">RUN BATTLE</button></div>
+        <div class="muted small" id="battle-status"></div>
+      </div>
+      <div id="battle-out"></div>
+    </div>
+  </section>
+
+  <!-- AUDIT -->
+  <section id="tab-audit" hidden>
+    <div class="panel">
+      <h2>AUDIT TRAIL <small>every agent action: permission → approval → execution</small></h2>
+      <div class="row"><div style="flex:0 0 auto"><button class="act" id="audit-refresh">REFRESH</button></div></div>
+      <div style="overflow-x:auto">
+      <table id="audit-table">
+        <thead><tr><th>Time</th><th>Agent</th><th>Model</th><th>Tool</th><th>Result</th><th>Approval</th><th class="num">ms</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <pre id="modal-body"></pre>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const fmtCtx = (n) => n >= 1e6 ? (n/1e6).toFixed(n % 1e6 ? 1 : 0) + 'M' : n >= 1000 ? Math.round(n/1000) + 'K' : n;
+const badge = (txt, cls) => `<span class="badge ${cls||''}">${txt}</span>`;
+
+function toast(msg, ms = 3500) {
+  const t = $('#toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = 'none', ms);
+}
+
+/* tabs */
+document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('nav button').forEach((x) => x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('section[id^=tab-]').forEach((s) => s.hidden = true);
+  $('#tab-' + b.dataset.tab).hidden = false;
+  if (b.dataset.tab === 'audit') loadAudit();
+}));
+
+/* models */
+let MODELS = [];
+async function loadModels() {
+  const r = await fetch('/api/models'); MODELS = await r.json();
+  const tbody = $('#models-table tbody');
+  tbody.innerHTML = MODELS.map((m) => `
+    <tr class="clickable" data-model="${m.catalogId}">
+      <td class="num">${m.arenaRank > 0 ? '#' + m.arenaRank : '—'}</td>
+      <td><b>${m.displayName}</b><div class="muted small">${m.catalogId}</div></td>
+      <td>${m.provider === 'arena' ? badge('arena', 'arena') : badge(m.provider)}</td>
+      <td>${badge(m.kind)}</td>
+      <td class="num">${m.agentSuccess.toFixed(1)}</td>
+      <td class="num">${m.toolReliability.toFixed(1)}</td>
+      <td class="num">${m.steerability.toFixed(1)}</td>
+      <td class="num">${m.coding.toFixed(1)}</td>
+      <td class="num">${m.reasoning.toFixed(1)}</td>
+      <td class="num">${m.speedSeconds.toFixed(1)}s</td>
+      <td class="num">$${m.costPerTask.toFixed(2)}</td>
+      <td>${fmtCtx(m.context)}</td>
+      <td>${m.available ? '<span class="dot up"></span>' : '<span class="dot down"></span>'}</td>
+    </tr>`).join('');
+  tbody.querySelectorAll('tr').forEach((tr) => tr.addEventListener('click', () => {
+    $('#modal-title').textContent = tr.dataset.model;
+    $('#modal-body').textContent = 'loading…';
+    $('#modal-bg').classList.add('open');
+    fetch('/api/card?model=' + encodeURIComponent(tr.dataset.model)).then((x) => x.json())
+      .then((d) => { $('#modal-body').textContent = d.card; }).catch(() => $('#modal-body').textContent = 'error');
+  }));
+  // populate battle checkboxes
+  const bm = $('#battle-models');
+  bm.innerHTML = MODELS.filter((m) => m.available).map((m, i) =>
+    `<label class="chk"><input type="checkbox" value="${m.catalogId}" ${i < 3 ? 'checked' : ''}> ${m.displayName} <span class="muted small">(${m.catalogId})</span></label>`
+  ).join('');
+}
+$('#modal-bg').addEventListener('click', (e) => { if (e.target.id === 'modal-bg') $('#modal-bg').classList.remove('open'); });
+
+/* router */
+$('#route-btn').addEventListener('click', async () => {
+  const btn = $('#route-btn'); btn.disabled = true;
+  try {
+    const r = await fetch('/api/route', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        task: $('#route-task').value,
+        strategy: $('#route-strategy').value,
+        includeUnavailable: $('#route-all').checked,
+      }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    const reqs = Object.entries(d.requirements).filter(([, v]) => v).map(([k]) => k);
+    $('#route-out').innerHTML = `
+      <div class="row" style="margin-top:14px">
+        <div class="grow2">
+          <div class="small muted">Requirements detected</div>
+          <div>${reqs.map((x) => `<span class="pill on">${x}</span>`).join('') || '<span class="pill">general</span>'}</div>
+          ${d.riskFlags.length ? `<div class="small" style="margin-top:6px">Risk flags: ${d.riskFlags.map((f) => `<span class="pill" style="color:var(--warn);border-color:var(--warn)">${f}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Role</th><th>Routed model</th><th>Strategy</th><th class="num">Score</th><th>Rationale</th></tr></thead>
+        <tbody>${d.roles.map((role) => `
+          <tr>
+            <td><b>${role.role}</b></td>
+            <td>${role.displayName}<div class="muted small">${role.catalogId}</div></td>
+            <td>${role.effectiveStrategy === 'auto' || role.effectiveStrategy === d.strategy ? badge(role.effectiveStrategy) : badge(role.effectiveStrategy) + ` <span class="muted small">(from ${d.strategy})</span>`}</td>
+            <td class="num score">${role.score.toFixed(1)}</td>
+            <td class="rational">${role.rationale}<div class="muted small">top: ${role.candidates.slice(0, 3).map((c) => `${c.catalogId} ${c.score}`).join(' · ')}</div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch (e) { toast('Route failed: ' + e.message); }
+  btn.disabled = false;
+});
+
+/* battle */
+$('#battle-btn').addEventListener('click', async () => {
+  const btn = $('#battle-btn'); btn.disabled = true;
+  $('#battle-status').textContent = 'running… (same task, all models in parallel)';
+  const models = [...document.querySelectorAll('#battle-models input:checked')].map((i) => i.value);
+  if (models.length === 0) { toast('Select at least one model'); btn.disabled = false; return; }
+  try {
+    const r = await fetch('/api/battle', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ task: $('#battle-task').value, models }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    $('#battle-status').textContent = `finished in ${(d.durationMs / 1000).toFixed(2)}s`;
+    $('#battle-out').innerHTML = `
+      <div class="winner">🏆 WINNER: <b>${d.winner ? d.winner.displayName : '—'}</b>
+        ${d.winner ? `<span class="muted">(${d.winner.catalogId}) — score ${d.winner.score.toFixed(1)}</span>` : ' <span class="muted">no model completed</span>'}</div>
+      <table>
+        <thead><tr><th>Model</th><th class="num">Quality</th><th class="num">Speed</th><th class="num">Cost</th><th class="num">Tools</th><th class="num">Score</th><th>Notes</th></tr></thead>
+        <tbody>${d.entries.map((e) => `
+          <tr>
+            <td><b>${e.displayName}</b> ${d.winner && e.catalogId === d.winner.catalogId ? '🏆' : ''}<div class="muted small">${e.catalogId}</div></td>
+            <td class="num">${e.quality.toFixed(1)}</td>
+            <td class="num">${(e.speedMs / 1000).toFixed(2)}s</td>
+            <td class="num">$${e.costUsd.toFixed(4)}</td>
+            <td class="num">${e.toolFailures}/${e.toolCalls} fail</td>
+            <td class="num score">${e.score.toFixed(1)}</td>
+            <td class="rational">${e.notes.join('<br>')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="muted small" style="margin-top:10px">Observations fed back into Model Intelligence — the next routing decision is smarter.</div>`;
+  } catch (e) { toast('Battle failed: ' + e.message); $('#battle-status').textContent = ''; }
+  btn.disabled = false;
+});
+
+/* audit */
+async function loadAudit() {
+  const r = await fetch('/api/audit?limit=60');
+  const d = await r.json();
+  const cls = (x) => x === 'success' ? 'var(--ok)' : (x === 'denied' || x === 'rejected') ? 'var(--err)' : 'var(--warn)';
+  $('#audit-table tbody').innerHTML = d.entries.map((e) => `
+    <tr>
+      <td class="small muted">${e.timestamp.slice(11, 19)}</td>
+      <td class="small">${e.agent}</td>
+      <td class="small">${e.model}</td>
+      <td class="small">${e.tool}</td>
+      <td style="color:${cls(e.result)}">${e.result}</td>
+      <td class="small">${e.approval}</td>
+      <td class="num small">${e.durationMs}</td>
+      <td class="rational">${e.status}</td>
+    </tr>`).join('');
+}
+$('#audit-refresh').addEventListener('click', loadAudit);
+
+loadModels().catch((e) => toast('Failed to load models: ' + e.message));
+</script>
+</body>
+</html>
